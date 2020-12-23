@@ -150,7 +150,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     public void onRefresh() {
         Constants.PAGE_COUNT = 1;
         mAdapter.clearData();
-
+        updateRefreshLayout(true);
         if(Util.isNetworkAvailable(Application.getInstance())){
             showError(View.GONE);
             //displaySnackbar(false,"Loading...");
@@ -163,11 +163,16 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     }
 
     private void updateRefreshLayout(boolean refresh) {
+        showLoading(refresh);
         mSwipeRefreshLayout.setRefreshing(refresh);
     }
 
     private void showError(int Visibility){
         getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.imgview).setVisibility(Visibility);
+    }
+
+    private void showLoading(boolean Visibility){
+        getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.loading).setVisibility(Visibility ? View.VISIBLE : View.GONE );
     }
 
     private void displaySnackbar(boolean isError, String message){
