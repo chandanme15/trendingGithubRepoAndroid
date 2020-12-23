@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:gravity="center_vertical">
+
+    <LinearLayout
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:background="#fafafa"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/avatarImg"
+            android:layout_marginStart="16dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#fafafa"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <View
+            android:id="@+id/item_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="16dp"
+            android:background="#E8E8E8" />
+
+        <TextView
+            android:id="@+id/username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:fontFamily="@font/roboto_regular"
+            android:textColor="#52575C"
+            android:textSize="12sp"
+            tools:text="Hello World!" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/roboto_medium"
+            android:textColor="#000"
+            android:textSize="15dp"
+            tools:text="Hello World!" />
+
+        <LinearLayout
+            android:id="@+id/sub_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/sub_item_genre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12dp"
+                android:layout_marginTop="8dp"
+                android:textColor="#52575C"
+                android:fontFamily="@font/pingfang_sc_regular"
+                tools:text="Genre:  Crime, Drama, Thriller" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/item_profile_img"
+                    android:layout_width="@dimen/item_feed_profile_size"
+                    android:layout_height="@dimen/item_feed_profile_size"
+                    android:src="@mi/ic_placeholder" />
+                <TextView
+                    android:id="@+id/language"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#52575C"
+                    android:fontFamily="@font/pingfang_sc_regular"
+                    tools:text="C++" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/mLinear"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:visibility="gone"
+        android:orientation="horizontal"
+        android:layout_marginStart="10dp"
+        android:layout_toEndOf="@+id/avatarImg">
+
+        <TextView
+            android:id="@+id/title_2"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="@string/title"
+            android:textSize="16sp" />
+
+        <ImageView
+            android:id="@+id/StarImage"
+            android:layout_width="20dp"
+            android:visibility="gone"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/favourites" />
+
+        <TextView
+            android:id="@+id/starView"
+            android:layout_width="60dp"
+            android:visibility="gone"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="@string/stars" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_alignTop="@+id/mLinear"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        android:layout_toEndOf="@+id/avatarImg"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="@string/description" />
+    <LinearLayout
+        android:id="@+id/mSecLinear"
+        android:layout_width="match_parent"
+        android:layout_height="25dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_below="@+id/description"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:layout_toEndOf="@+id/avatarImg">
+        <TextView
+            android:id="@+id/langView"
+            android:layout_width="120dp"
+            android:layout_height="match_parent"
+            android:text="@string/lang" />
+        <TextView
+            android:id="@+id/licenseView"
+            android:layout_width="fill_parent"
+            android:gravity="end"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:paddingEnd="5dp"
+            android:text="@string/license" />
+    </LinearLayout>
+</LinearLayout>
