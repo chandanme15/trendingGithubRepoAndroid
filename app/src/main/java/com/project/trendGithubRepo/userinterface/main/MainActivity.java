@@ -35,8 +35,8 @@ public class MainActivity extends BaseActivity<MainViewModel> {
         setContentView(R.layout.activity_main);
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
-            getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
-            getSupportActionBar().setCustomView(R.layout.action_bar);
+            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+            actionBar.setCustomView(R.layout.action_bar);
         }
 
         ButterKnife.bind(this);

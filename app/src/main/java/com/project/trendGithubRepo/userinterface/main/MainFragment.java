@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -15,6 +16,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
+
 import com.project.trendGithubRepo.Application;
 import com.project.trendGithubRepo.R;
 import com.project.trendGithubRepo.data.manager.DataManager;
@@ -30,6 +33,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     RecyclerView mRecyclerView;
     @BindView(R.id.swipeRefreshLayout)
     SwipeRefreshLayout mSwipeRefreshLayout;
+    Button button;
 
     public static MainFragment getInstance() {
         return new MainFragment();
@@ -60,7 +64,9 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     @Override
     public void onStart () {
         super.onStart();
+        showLoading(true);
         viewModel.getRepos().observe(this, itemModels -> {
+            mAdapter.clearData();
             mAdapter.addData(itemModels);
             updateRefreshLayout(false);
         });
@@ -74,18 +80,19 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         if (DataManager.getInstance(Application.getInstance()).getDate() == null )
             DataManager.getInstance(Application.getInstance()).setDate(Util.getDefaultDate());
 
-        updateRefreshLayout(true);
-        displaySnackbar(false,"Loading...");
+        mSwipeRefreshLayout.setRefreshing(false);
+        //displaySnackbar(false,"Loading...");
         viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
 
     }
 
     private void initView(){
-        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
-        android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light);
+        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.black);
         mSwipeRefreshLayout.setOnRefreshListener(this);
+        button = (Button) getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.retry_button);
+        button.setOnClickListener(v -> {
+            retry();
+        });
     }
 
     private void setupRecycler(){
@@ -128,6 +135,19 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
                 Util.getDay(DataManager.getInstance(Application.getInstance()).getDate())).show();
     }
 
+    public void retry() {
+        Constants.PAGE_COUNT = 1;
+        if (Util.isNetworkAvailable(Application.getInstance())){
+            showError(View.GONE);
+            showLoading(true);
+            viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+        }
+        else {
+            mAdapter.clearData();
+            showError(View.VISIBLE);
+        }
+    }
+
     public DatePickerDialog.OnDateSetListener date = (view, year, monthOfYear, dayOfMonth) -> {
 
         DataManager.getInstance(Application.getInstance()).setDate(Util.formatDate(year,monthOfYear+1,dayOfMonth));
@@ -149,13 +169,13 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     @Override
     public void onRefresh() {
         Constants.PAGE_COUNT = 1;
-        mAdapter.clearData();
         updateRefreshLayout(true);
         if(Util.isNetworkAvailable(Application.getInstance())){
             showError(View.GONE);
             //displaySnackbar(false,"Loading...");
             viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
         }else {
+            mAdapter.clearData();
             updateRefreshLayout(false);
             showError(View.VISIBLE);
             //displaySnackbar(true,"No Internet Connection :(");
@@ -163,12 +183,17 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     }
 
     private void updateRefreshLayout(boolean refresh) {
-        showLoading(refresh);
+        if(!refresh) {
+            showLoading(refresh);
+        }
         mSwipeRefreshLayout.setRefreshing(refresh);
     }
 
     private void showError(int Visibility){
-        getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.imgview).setVisibility(Visibility);
+        getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.error).setVisibility(Visibility);
+        getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.retry_button).setVisibility(Visibility);
+        /*getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.err_mssg_1).setVisibility(Visibility);
+        getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.err_mssg_2).setVisibility(Visibility);*/
     }
 
     private void showLoading(boolean Visibility){
