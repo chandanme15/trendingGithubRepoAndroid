@@ -4,24 +4,20 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 import com.project.trendGithubRepo.Application;
 import com.project.trendGithubRepo.R;
 import com.project.trendGithubRepo.data.manager.DataManager;
 import com.project.trendGithubRepo.userinterface.base.BaseActivity;
-import com.project.trendGithubRepo.utils.Util;
 
 public class MainActivity extends BaseActivity<MainViewModel> {
 
