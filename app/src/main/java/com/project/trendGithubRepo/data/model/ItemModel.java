@@ -36,6 +36,10 @@ public class ItemModel implements Serializable {
 
     private boolean isSubItemVisible;
 
+    public ItemModel() {
+
+    }
+
     public ItemModel(String name, String html_url, String clone_url, String description, String language, LicenseModel licenses, OwnerModel owners, int star_count, int forks_count, boolean isSubItemVisible) {
         this.name = name;
         this.html_url = html_url;

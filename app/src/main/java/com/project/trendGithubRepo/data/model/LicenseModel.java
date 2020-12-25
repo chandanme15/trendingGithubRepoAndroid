@@ -11,6 +11,8 @@ public class LicenseModel implements Serializable {
     @Expose
     private String name;
 
+    public LicenseModel() {}
+
     public LicenseModel(String name) {
         this.name = name;
     }

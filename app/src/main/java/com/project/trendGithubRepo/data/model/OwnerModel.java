@@ -19,6 +19,8 @@ public class OwnerModel implements Serializable {
     @Expose
     private String html_url;
 
+    public OwnerModel() {}
+
     public OwnerModel(String name, String avatar_url, String builtBy, String html_url) {
         this.name = name;
         this.avatar_url = avatar_url;

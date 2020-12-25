@@ -2,11 +2,13 @@ package com.project.trendGithubRepo.userinterface.main;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import androidx.appcompat.widget.PopupMenu;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -16,16 +18,25 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 import com.project.trendGithubRepo.Application;
 import com.project.trendGithubRepo.R;
 import com.project.trendGithubRepo.data.manager.DataManager;
 import com.project.trendGithubRepo.userinterface.base.BaseFragment;
+import com.project.trendGithubRepo.utils.CacheData;
+import com.project.trendGithubRepo.utils.CacheTime;
 import com.project.trendGithubRepo.utils.Constants;
+import com.project.trendGithubRepo.utils.FileSystem;
 import com.project.trendGithubRepo.utils.Util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainFragment extends BaseFragment<MainViewModel> implements View.OnClickListener, SwipeRefreshLayout.OnRefreshListener {
+
+    public static final String cacheFileData = "GihubRepoCacheData.txt";
+    public static final String cacheFileTime = "GihubRepoCacheTime.txt";
+
     private View mView;
     private MainAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
@@ -33,6 +44,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     RecyclerView mRecyclerView;
     @BindView(R.id.swipeRefreshLayout)
     SwipeRefreshLayout mSwipeRefreshLayout;
+    CountDownTimer countDownTimer;
     Button button;
 
     public static MainFragment getInstance() {
@@ -64,11 +76,13 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     @Override
     public void onStart () {
         super.onStart();
+        Constants.PAGE_COUNT = 1;
         showLoading(true);
         viewModel.getRepos().observe(this, itemModels -> {
             mAdapter.clearData();
             mAdapter.addData(itemModels);
             updateRefreshLayout(false);
+            saveDataInCache();
         });
         viewModel.getError().observe(this, isError -> {
             if(isError) {
@@ -81,9 +95,35 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
             DataManager.getInstance(Application.getInstance()).setDate(Util.getDefaultDate());
 
         mSwipeRefreshLayout.setRefreshing(false);
-        //displaySnackbar(false,"Loading...");
-        viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+        if (Util.isNetworkAvailable(Application.getInstance())){
+            showError(View.GONE);
+            viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+        }
+        else if(!LoadDataFromCache()) {
+            showLoading(false);
+            mAdapter.clearData();
+            showError(View.VISIBLE);
+        }
+        else {
+            showLoading(false);
+        }
+    }
 
+    void onMenuClicked(View v) {
+        PopupMenu popup = new PopupMenu(getActivity(), v);
+        popup.getMenuInflater().inflate(R.menu.menu_bar, popup.getMenu());
+        popup.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case R.id.menu_sort_by_stars:
+                    mAdapter.sortDataByStars();
+                    break;
+                case R.id.menu_sort_by_names:
+                    mAdapter.sortDataByNames();
+                    break;
+            }
+            return true;
+        });
+        popup.show();
     }
 
     private void initView(){
@@ -92,6 +132,9 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         button = (Button) getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.retry_button);
         button.setOnClickListener(v -> {
             retry();
+        });
+        getActivity().findViewById(R.id.img_item_menu).setOnClickListener(v -> {
+            onMenuClicked(v);
         });
     }
 
@@ -119,7 +162,6 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
                     Constants.PAGE_COUNT++;
                     displaySnackbar(false, "Loading...");
                     viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
-
                 }
                 else
                     displaySnackbar(true,"No internet Connection ! ");
@@ -137,12 +179,13 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
 
     public void retry() {
         Constants.PAGE_COUNT = 1;
+        showLoading(true);
         if (Util.isNetworkAvailable(Application.getInstance())){
             showError(View.GONE);
-            showLoading(true);
             viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
         }
-        else {
+        else if(!LoadDataFromCache()) {
+            showLoading(false);
             mAdapter.clearData();
             showError(View.VISIBLE);
         }
@@ -170,15 +213,17 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     public void onRefresh() {
         Constants.PAGE_COUNT = 1;
         updateRefreshLayout(true);
-        if(Util.isNetworkAvailable(Application.getInstance())){
+        if (Util.isNetworkAvailable(Application.getInstance())){
             showError(View.GONE);
-            //displaySnackbar(false,"Loading...");
             viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
-        }else {
+        }
+        else if(!LoadDataFromCache()) {
             mAdapter.clearData();
             updateRefreshLayout(false);
             showError(View.VISIBLE);
-            //displaySnackbar(true,"No Internet Connection :(");
+        }
+        else {
+            updateRefreshLayout(false);
         }
     }
 
@@ -208,6 +253,52 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     public void onDestroy() {
         super.onDestroy();
         viewModel.onClear();
+    }
+
+    public boolean purgeCacheData() {
+        FileSystem.DeleteFile(getActivity(), cacheFileData);
+        return FileSystem.DeleteFile(getActivity(), cacheFileTime);
+    }
+
+    public boolean saveDataInCache() {
+        purgeCacheData();
+        List<CacheData> cacheDataArrayList = new ArrayList<>();
+        cacheDataArrayList.add(new CacheData(Util.getCurrentDateAndTime(), mAdapter.getData()));
+        FileSystem.ReWriteFile(getActivity(), cacheFileData, cacheDataArrayList);
+
+        List<CacheTime> t = new ArrayList<>();
+        t.add(new CacheTime(Long.parseLong(Util.getCurrentDateAndTime())));
+        FileSystem.ReWriteFile(getActivity(), cacheFileTime, t);
+        return true;
+    }
+
+    public boolean LoadDataFromCache() {
+        try {
+            long cacheTime = Long.parseLong(FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", ""));
+            long currentTime = Long.parseLong(Util.getCurrentDateAndTime());
+            if(currentTime - cacheTime > 20000) {
+                //onRefresh();
+                return false;
+            }
+
+            List<CacheData> cacheData = FileSystem.ReadFile(getActivity(), CacheData[].class, cacheFileData);
+            if(cacheData == null || cacheData.size() == 0) {
+                return false;
+            }
+            mAdapter.addData(cacheData.get(0).getData());
+            //displaySnackbar(false, "Showing Cached Data..");
+            return true;
+        }
+        catch (Exception e) {
+
+        }
+        return false;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        onRefresh();
     }
 
 }

@@ -17,6 +17,8 @@ public class RepoModel implements Serializable {
     @Expose
     private List<ItemModel> items;
 
+    public RepoModel() {}
+
     public RepoModel(int count, boolean results, List<ItemModel> items) {
         this.count = count;
         this.results = results;

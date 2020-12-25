@@ -17,6 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import com.project.trendGithubRepo.R;
@@ -149,6 +152,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         Toast.makeText(context,"Link Copied to the Clipboard",Toast.LENGTH_SHORT).show();
     }
 
+    public List<ItemModel> getData() {
+        return mData;
+    }
+
     public void clearData() {
         mData = new ArrayList<>();
         notifyDataSetChanged();
@@ -159,4 +166,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
+    public void sortDataByNames(){
+        Collections.sort(mData, (o1, o2) -> o1.getName().compareTo(o2.getName()));
+        notifyDataSetChanged();
+    }
+
+    public void sortDataByStars(){
+        Collections.sort(mData, (o1, o2) -> Integer.compare(o1.getStar_count(), o2.getStar_count()) == 1 ? -1 : 1);
+        notifyDataSetChanged();
+    }
 }

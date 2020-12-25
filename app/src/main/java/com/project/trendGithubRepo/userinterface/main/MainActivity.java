@@ -6,10 +6,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.lifecycle.ViewModelProvider;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
+
 import com.project.trendGithubRepo.Application;
 import com.project.trendGithubRepo.R;
 import com.project.trendGithubRepo.data.manager.DataManager;
@@ -38,15 +41,7 @@ public class MainActivity extends BaseActivity<MainViewModel> {
             actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
             actionBar.setCustomView(R.layout.action_bar);
         }
-
         ButterKnife.bind(this);
-        if (Util.isNetworkAvailable(Application.getInstance()))
-            getSupportFragmentManager().beginTransaction()
-            .replace(R.id.sample_content_fragment, MainFragment.getInstance())
-            .commit();
-        else {
-            Util.showSnack(mainLayout,true,"No Internet Connection! ");
-            imageView.setVisibility(View.VISIBLE);
-        }
+        getSupportFragmentManager().beginTransaction().replace(R.id.sample_content_fragment, MainFragment.getInstance()).commit();
     }
 }

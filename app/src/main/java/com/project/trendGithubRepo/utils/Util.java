@@ -13,6 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 import com.project.trendGithubRepo.R;
 
@@ -82,5 +83,9 @@ public class Util {
 
     public static String getDefaultDate() {
         return new SimpleDateFormat("yyyy-MM-dd").format(new Date(System.currentTimeMillis()-24*60*60*1000));
+    }
+
+    public static String getCurrentDateAndTime() {
+        return new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault()).format(new Date(System.currentTimeMillis()));
     }
 }
