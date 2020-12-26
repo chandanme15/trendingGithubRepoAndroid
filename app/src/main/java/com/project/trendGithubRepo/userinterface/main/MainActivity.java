@@ -42,7 +42,9 @@ public class MainActivity extends BaseActivity<MainViewModel> {
             actionBar.setCustomView(R.layout.action_bar);
         }
         ButterKnife.bind(this);
-        isStoragePermissionGranted();
+        if(isStoragePermissionGranted()) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.sample_content_fragment, MainFragment.getInstance()).commit();
+        }
     }
 
     @Override

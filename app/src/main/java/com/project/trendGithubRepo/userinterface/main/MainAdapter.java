@@ -161,18 +161,29 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
-    public void addData(List<ItemModel> mData){
-        this.mData.addAll(mData);
+    public boolean addData(List<ItemModel> mData){
+        boolean bRet = this.mData.addAll(mData);
         notifyDataSetChanged();
+        return bRet;
     }
 
     public void sortDataByNames(){
-        Collections.sort(mData, (o1, o2) -> o1.getName().compareTo(o2.getName()));
+        try{
+            Collections.sort(mData, (o1, o2) -> o1.getName().compareTo(o2.getName()));
+        }
+        catch (Exception e) {
+
+        }
         notifyDataSetChanged();
     }
 
     public void sortDataByStars(){
-        Collections.sort(mData, (o1, o2) -> Integer.compare(o1.getStar_count(), o2.getStar_count()) == 1 ? -1 : 1);
+        try{
+            Collections.sort(mData, (o1, o2) -> (Integer.compare(o1.getStar_count(), o2.getStar_count()) * -1));
+        }
+        catch (Exception e) {
+
+        }
         notifyDataSetChanged();
     }
 }

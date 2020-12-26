@@ -3,6 +3,7 @@ package com.project.trendGithubRepo.userinterface.main;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,10 +45,10 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     RecyclerView mRecyclerView;
     @BindView(R.id.swipeRefreshLayout)
     SwipeRefreshLayout mSwipeRefreshLayout;
-    CountDownTimer countDownTimer;
     Button button;
+    private boolean m_bIsGithubRepoLoading = false;
 
-    public static MainFragment getInstance() {
+    static MainFragment getInstance() {
         return new MainFragment();
     }
 
@@ -76,10 +77,14 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     @Override
     public void onStart () {
         super.onStart();
+        m_bIsGithubRepoLoading = false;
         Constants.PAGE_COUNT = 1;
         showLoading(true);
+        showError(View.GONE);
         viewModel.getRepos().observe(this, itemModels -> {
-            mAdapter.clearData();
+            if(Constants.PAGE_COUNT == 1) {
+                mAdapter.clearData();
+            }
             mAdapter.addData(itemModels);
             updateRefreshLayout(false);
             saveDataInCache();
@@ -87,6 +92,9 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         viewModel.getError().observe(this, isError -> {
             if(isError) {
                 displaySnackbar(true, "Can't load more github repos");
+                /*if(!bIsLoadDataFromCacheSuccesful()) {
+                    showError(View.VISIBLE);
+                }*/
                 updateRefreshLayout(false);
             }
         });
@@ -94,22 +102,36 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         if (DataManager.getInstance(Application.getInstance()).getDate() == null )
             DataManager.getInstance(Application.getInstance()).setDate(Util.getDefaultDate());
 
-        mSwipeRefreshLayout.setRefreshing(false);
-        if (Util.isNetworkAvailable(Application.getInstance())){
+        if(LoadData()) {
             showError(View.GONE);
-            viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
-        }
-        else if(!LoadDataFromCache()) {
-            showLoading(false);
-            mAdapter.clearData();
-            showError(View.VISIBLE);
+            showLoading(m_bIsGithubRepoLoading);
         }
         else {
+            showError(View.VISIBLE);
             showLoading(false);
         }
     }
 
-    void onMenuClicked(View v) {
+    private boolean LoadData() {
+        if(!bIsCacheExpired()) {
+            m_bIsGithubRepoLoading = false;
+            return bIsLoadDataFromCacheSuccesful();
+        }
+        else if (Util.isNetworkAvailable(Application.getInstance())) {
+            LoadReposFromGithub();
+            m_bIsGithubRepoLoading = true;
+            return true;
+        }
+        m_bIsGithubRepoLoading = false;
+        return bIsLoadDataFromCacheSuccesful();
+    }
+
+    private void LoadReposFromGithub() {
+        viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+    }
+
+
+    private void onMenuClicked(View v) {
         PopupMenu popup = new PopupMenu(getActivity(), v);
         popup.getMenuInflater().inflate(R.menu.menu_bar, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
@@ -177,21 +199,23 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
                 Util.getDay(DataManager.getInstance(Application.getInstance()).getDate())).show();
     }
 
-    public void retry() {
+    private void retry() {
         Constants.PAGE_COUNT = 1;
         showLoading(true);
-        if (Util.isNetworkAvailable(Application.getInstance())){
-            showError(View.GONE);
-            viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+        if (Util.isNetworkAvailable(Application.getInstance())) {
+            LoadReposFromGithub();
         }
-        else if(!LoadDataFromCache()) {
-            showLoading(false);
-            mAdapter.clearData();
+        else if(LoadData()) {
+            showError(View.GONE);
+            updateRefreshLayout(false);
+        }
+        else {
             showError(View.VISIBLE);
+            updateRefreshLayout(false);
         }
     }
 
-    public DatePickerDialog.OnDateSetListener date = (view, year, monthOfYear, dayOfMonth) -> {
+    private DatePickerDialog.OnDateSetListener date = (view, year, monthOfYear, dayOfMonth) -> {
 
         DataManager.getInstance(Application.getInstance()).setDate(Util.formatDate(year,monthOfYear+1,dayOfMonth));
 
@@ -213,16 +237,15 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     public void onRefresh() {
         Constants.PAGE_COUNT = 1;
         updateRefreshLayout(true);
-        if (Util.isNetworkAvailable(Application.getInstance())){
-            showError(View.GONE);
-            viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+        if (Util.isNetworkAvailable(Application.getInstance())) {
+            LoadReposFromGithub();
         }
-        else if(!LoadDataFromCache()) {
-            mAdapter.clearData();
+        else if(LoadData()) {
+            showError(View.GONE);
             updateRefreshLayout(false);
-            showError(View.VISIBLE);
         }
         else {
+            showError(View.VISIBLE);
             updateRefreshLayout(false);
         }
     }
@@ -237,8 +260,6 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     private void showError(int Visibility){
         getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.error).setVisibility(Visibility);
         getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.retry_button).setVisibility(Visibility);
-        /*getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.err_mssg_1).setVisibility(Visibility);
-        getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.err_mssg_2).setVisibility(Visibility);*/
     }
 
     private void showLoading(boolean Visibility){
@@ -249,47 +270,53 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         Util.showSnack(mView, isError, message);
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        viewModel.onClear();
+    private boolean bIsCacheExpired() {
+        try {
+            long cacheTime = Long.parseLong(FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", ""));
+            long currentTime = Long.parseLong(Util.getCurrentDateAndTime());
+            return currentTime - cacheTime > 2;
+        }
+        catch (Exception e) {
+
+        }
+        return true;
     }
 
-    public boolean purgeCacheData() {
+
+    private boolean purgeCacheData() {
         FileSystem.DeleteFile(getActivity(), cacheFileData);
         return FileSystem.DeleteFile(getActivity(), cacheFileTime);
     }
 
-    public boolean saveDataInCache() {
-        purgeCacheData();
-        List<CacheData> cacheDataArrayList = new ArrayList<>();
-        cacheDataArrayList.add(new CacheData(Util.getCurrentDateAndTime(), mAdapter.getData()));
-        FileSystem.ReWriteFile(getActivity(), cacheFileData, cacheDataArrayList);
+    private boolean saveDataInCache() {
+        try {
+            purgeCacheData();
+            List<CacheData> cacheDataArrayList = new ArrayList<>();
+            cacheDataArrayList.add(new CacheData(Util.getCurrentDateAndTime(), mAdapter.getData()));
+            boolean bRetData = FileSystem.ReWriteFile(getActivity(), cacheFileData, cacheDataArrayList);
 
-        List<CacheTime> t = new ArrayList<>();
-        t.add(new CacheTime(Long.parseLong(Util.getCurrentDateAndTime())));
-        FileSystem.ReWriteFile(getActivity(), cacheFileTime, t);
-        return true;
+            List<CacheTime> t = new ArrayList<>();
+            t.add(new CacheTime(Long.parseLong(Util.getCurrentDateAndTime())));
+            boolean bRetTime = FileSystem.ReWriteFile(getActivity(), cacheFileTime, t);
+            return bRetData & bRetTime;
+        } catch (Exception e) {
+
+        }
+        return false;
     }
 
-    public boolean LoadDataFromCache() {
+    private boolean bIsLoadDataFromCacheSuccesful() {
         try {
-            long cacheTime = Long.parseLong(FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", ""));
-            long currentTime = Long.parseLong(Util.getCurrentDateAndTime());
-            if(currentTime - cacheTime > 20000) {
-                //onRefresh();
-                return false;
-            }
-
             List<CacheData> cacheData = FileSystem.ReadFile(getActivity(), CacheData[].class, cacheFileData);
-            if(cacheData == null || cacheData.size() == 0) {
+            if (cacheData == null || cacheData.size() == 0) {
                 return false;
             }
-            mAdapter.addData(cacheData.get(0).getData());
-            //displaySnackbar(false, "Showing Cached Data..");
-            return true;
-        }
-        catch (Exception e) {
+            boolean bRet = mAdapter.addData(cacheData.get(0).getData());
+            if(bRet) {
+                displaySnackbar(false, "Showing Cached Data");
+            }
+            return bRet;
+        } catch (Exception e) {
 
         }
         return false;
@@ -298,7 +325,13 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     @Override
     public void onResume() {
         super.onResume();
-        onRefresh();
+        //onRefresh();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        viewModel.onClear();
     }
 
 }
