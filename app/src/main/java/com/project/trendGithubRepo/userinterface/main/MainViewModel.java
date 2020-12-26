@@ -35,8 +35,7 @@ public class MainViewModel extends BaseViewModel {
     }
 
     public void loadRepos(String date){
-        initMap();
-        if( date != null && !date.isEmpty()) map.put("q","created:>"+date);
+        initMap(date);
         disposable.add(
                 dataManager.getRepos(map)
                         .subscribeOn(Schedulers.io())
@@ -53,11 +52,13 @@ public class MainViewModel extends BaseViewModel {
     }
 
 
-    private void initMap(){
-        map.put("q","created:>");
+    private void initMap(String date){
+        //map.put("q","created:>");
         map.put("sort","stars");
         map.put("order","desc");
         map.put("page",String.valueOf(Constants.PAGE_COUNT));
+        if( date != null && !date.isEmpty()) map.put("q","created:>"+date);
+        //map.put("since","daily");
     }
 
     public void onClear(){

@@ -55,7 +55,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     @Override
     public MainViewModel getViewModel() {
         MainViewModelFactory factory = new MainViewModelFactory(DataManager.getInstance(Application.getInstance()));
-        return new ViewModelProvider(getActivity(), factory).get(MainViewModel.class);
+        return new ViewModelProvider(this, factory).get(MainViewModel.class);
     }
 
     @Override
@@ -91,10 +91,10 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         });
         viewModel.getError().observe(this, isError -> {
             if(isError) {
-                displaySnackbar(true, "Can't load more github repos");
-                /*if(!bIsLoadDataFromCacheSuccesful()) {
+                //displaySnackbar(true, "Can't load github repos");
+                if(!bIsLoadDataFromCacheSuccesful()) {
                     showError(View.VISIBLE);
-                }*/
+                }
                 updateRefreshLayout(false);
             }
         });
@@ -151,13 +151,8 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     private void initView(){
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.black);
         mSwipeRefreshLayout.setOnRefreshListener(this);
-        button = (Button) getActivity().findViewById(R.id.sample_main_layout).findViewById(R.id.retry_button);
-        button.setOnClickListener(v -> {
-            retry();
-        });
-        getActivity().findViewById(R.id.img_item_menu).setOnClickListener(v -> {
-            onMenuClicked(v);
-        });
+        getActivity().findViewById(R.id.retry_button).setOnClickListener(this::retry);
+        getActivity().findViewById(R.id.img_item_menu).setOnClickListener(this::onMenuClicked);
     }
 
     private void setupRecycler(){
@@ -199,14 +194,14 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
                 Util.getDay(DataManager.getInstance(Application.getInstance()).getDate())).show();
     }
 
-    private void retry() {
+    private void retry(View view) {
         Constants.PAGE_COUNT = 1;
         showLoading(true);
+        showError(View.GONE);
         if (Util.isNetworkAvailable(Application.getInstance())) {
             LoadReposFromGithub();
         }
         else if(LoadData()) {
-            showError(View.GONE);
             updateRefreshLayout(false);
         }
         else {
@@ -274,7 +269,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         try {
             long cacheTime = Long.parseLong(FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", ""));
             long currentTime = Long.parseLong(Util.getCurrentDateAndTime());
-            return currentTime - cacheTime > 2;
+            return (currentTime - cacheTime) > 20000;
         }
         catch (Exception e) {
 
