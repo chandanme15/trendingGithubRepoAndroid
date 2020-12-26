@@ -21,11 +21,6 @@ import com.project.trendGithubRepo.userinterface.base.BaseActivity;
 
 public class MainActivity extends BaseActivity<MainViewModel> {
 
-    @BindView(R.id.sample_main_layout)
-    LinearLayout mainLayout;
-    @BindView(R.id.imgview)
-    ImageView imageView;
-
     @Override
     public MainViewModel createViewModel() {
         MainViewModelFactory factory = new MainViewModelFactory(DataManager.getInstance(Application.getInstance()));
@@ -41,7 +36,6 @@ public class MainActivity extends BaseActivity<MainViewModel> {
             actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
             actionBar.setCustomView(R.layout.action_bar);
         }
-        ButterKnife.bind(this);
         if(isStoragePermissionGranted()) {
             getSupportFragmentManager().beginTransaction().replace(R.id.sample_content_fragment, MainFragment.getInstance()).commit();
         }

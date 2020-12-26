@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.project.trendGithubRepo.utils.CircleTransform;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         public ViewHolder(@NonNull final View mView) {
             super(mView);
 
-            mView.setOnClickListener(view -> MainAdapter.copyToClip(view.getContext(),getAdapterPosition()));
+            //mView.setOnClickListener(view -> MainAdapter.copyToClip(view.getContext(),getAdapterPosition()));
 
             mAvatatImg = mView.findViewById(R.id.avatarImg);
             mUsername = mView.findViewById(R.id.username);
@@ -126,7 +127,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         }
 
         public void setAvatar(String avatar) {
-            Picasso.get().load(avatar).into(mAvatatImg);
+            Picasso.get().load(avatar).transform(new CircleTransform()).into(mAvatatImg);
         }
 
         public void setForksCount(String forkValue) {

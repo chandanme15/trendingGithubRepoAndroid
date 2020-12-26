@@ -35,8 +35,9 @@ import java.util.List;
 
 public class MainFragment extends BaseFragment<MainViewModel> implements View.OnClickListener, SwipeRefreshLayout.OnRefreshListener {
 
-    public static final String cacheFileData = "GihubRepoCacheData.txt";
-    public static final String cacheFileTime = "GihubRepoCacheTime.txt";
+    private static final String cacheFileData = "GihubRepoCacheData.txt";
+    private static final String cacheFileTime = "GihubRepoCacheTime.txt";
+    private static final long CACHE_EXPIRY_TIME = 20000;
 
     private View mView;
     private MainAdapter mAdapter;
@@ -45,8 +46,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     RecyclerView mRecyclerView;
     @BindView(R.id.swipeRefreshLayout)
     SwipeRefreshLayout mSwipeRefreshLayout;
-    Button button;
-    private boolean m_bIsGithubRepoLoading = false;
+    private boolean m_bIsGithubRepoLoading = false, m_bIsDataLoadedFromCache = false;
 
     static MainFragment getInstance() {
         return new MainFragment();
@@ -78,10 +78,12 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     public void onStart () {
         super.onStart();
         m_bIsGithubRepoLoading = false;
+        m_bIsDataLoadedFromCache = false;
         Constants.PAGE_COUNT = 1;
         showLoading(true);
         showError(View.GONE);
         viewModel.getRepos().observe(this, itemModels -> {
+            m_bIsGithubRepoLoading = false;
             if(Constants.PAGE_COUNT == 1) {
                 mAdapter.clearData();
             }
@@ -90,6 +92,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
             saveDataInCache();
         });
         viewModel.getError().observe(this, isError -> {
+            m_bIsGithubRepoLoading = false;
             if(isError) {
                 //displaySnackbar(true, "Can't load github repos");
                 if(!bIsLoadDataFromCacheSuccesful()) {
@@ -119,7 +122,6 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         }
         else if (Util.isNetworkAvailable(Application.getInstance())) {
             LoadReposFromGithub();
-            m_bIsGithubRepoLoading = true;
             return true;
         }
         m_bIsGithubRepoLoading = false;
@@ -127,6 +129,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     }
 
     private void LoadReposFromGithub() {
+        m_bIsGithubRepoLoading = true;
         viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
     }
 
@@ -170,6 +173,8 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     private RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrollStateChanged(RecyclerView recyclerView,int newState) {
+
+            if(m_bIsGithubRepoLoading || m_bIsDataLoadedFromCache) return;
             int totalItemCount = mLayoutManager.getItemCount();
             int lastVisibleItem = ((LinearLayoutManager) mLayoutManager).findLastVisibleItemPosition();
 
@@ -178,10 +183,9 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
                 if (Util.isNetworkAvailable(Application.getInstance())){
                     Constants.PAGE_COUNT++;
                     displaySnackbar(false, "Loading...");
-                    viewModel.loadRepos(DataManager.getInstance(Application.getInstance()).getDate());
+                    LoadReposFromGithub();
                 }
-                else
-                    displaySnackbar(true,"No internet Connection ! ");
+                //else displaySnackbar(true,"No internet Connection ! ");
             }
         }
     };
@@ -196,6 +200,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
 
     private void retry(View view) {
         Constants.PAGE_COUNT = 1;
+        m_bIsDataLoadedFromCache = false;
         showLoading(true);
         showError(View.GONE);
         if (Util.isNetworkAvailable(Application.getInstance())) {
@@ -232,6 +237,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
     public void onRefresh() {
         Constants.PAGE_COUNT = 1;
         updateRefreshLayout(true);
+        m_bIsDataLoadedFromCache = false;
         if (Util.isNetworkAvailable(Application.getInstance())) {
             LoadReposFromGithub();
         }
@@ -269,7 +275,7 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
         try {
             long cacheTime = Long.parseLong(FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", ""));
             long currentTime = Long.parseLong(Util.getCurrentDateAndTime());
-            return (currentTime - cacheTime) > 20000;
+            return (currentTime - cacheTime) > CACHE_EXPIRY_TIME;
         }
         catch (Exception e) {
 
@@ -279,8 +285,9 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
 
 
     private boolean purgeCacheData() {
-        FileSystem.DeleteFile(getActivity(), cacheFileData);
-        return FileSystem.DeleteFile(getActivity(), cacheFileTime);
+        boolean bRetData = FileSystem.DeleteFile(getActivity(), cacheFileData);
+        boolean bRetTime = FileSystem.DeleteFile(getActivity(), cacheFileTime);
+        return bRetData & bRetTime;
     }
 
     private boolean saveDataInCache() {
@@ -290,9 +297,9 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
             cacheDataArrayList.add(new CacheData(Util.getCurrentDateAndTime(), mAdapter.getData()));
             boolean bRetData = FileSystem.ReWriteFile(getActivity(), cacheFileData, cacheDataArrayList);
 
-            List<CacheTime> t = new ArrayList<>();
-            t.add(new CacheTime(Long.parseLong(Util.getCurrentDateAndTime())));
-            boolean bRetTime = FileSystem.ReWriteFile(getActivity(), cacheFileTime, t);
+            List<CacheTime> cacheTime = new ArrayList<>();
+            cacheTime.add(new CacheTime(Long.parseLong(Util.getCurrentDateAndTime())));
+            boolean bRetTime = FileSystem.ReWriteFile(getActivity(), cacheFileTime, cacheTime);
             return bRetData & bRetTime;
         } catch (Exception e) {
 
@@ -307,9 +314,10 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
                 return false;
             }
             boolean bRet = mAdapter.addData(cacheData.get(0).getData());
-            if(bRet) {
+            /*if(bRet) {
                 displaySnackbar(false, "Showing Cached Data");
-            }
+            }*/
+            m_bIsDataLoadedFromCache = bRet;
             return bRet;
         } catch (Exception e) {
 
