@@ -53,11 +53,13 @@ public class MainViewModel extends BaseViewModel {
 
 
     private void initMap(String date){
-        //map.put("q","created:>");
+
+        map.put("q","android");
         map.put("sort","stars");
         map.put("order","desc");
         map.put("page",String.valueOf(Constants.PAGE_COUNT));
-        if( date != null && !date.isEmpty()) map.put("q","created:>"+date);
+        map.put("per_page","50");
+        //if( date != null && !date.isEmpty()) map.put("q","created:>"+date);
         //map.put("since","daily");
     }
 
