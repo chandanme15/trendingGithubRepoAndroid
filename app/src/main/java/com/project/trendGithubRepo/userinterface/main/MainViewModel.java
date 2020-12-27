@@ -60,7 +60,7 @@ public class MainViewModel extends BaseViewModel {
         map.put("page",String.valueOf(Constants.PAGE_COUNT));
         map.put("per_page","50");
         //if( date != null && !date.isEmpty()) map.put("q","created:>"+date);
-        //map.put("since","daily");
+        map.put("since","daily");
     }
 
     public void onClear(){

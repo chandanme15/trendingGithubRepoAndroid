@@ -273,7 +273,8 @@ public class MainFragment extends BaseFragment<MainViewModel> implements View.On
 
     private boolean bIsCacheExpired() {
         try {
-            long cacheTime = Long.parseLong(FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", ""));
+            String temp = FileSystem.ReadFromFile(getActivity(), cacheFileTime).replaceAll("[\\D+]", "");
+            long cacheTime = temp.isEmpty() ? 0 : Long.parseLong(temp);
             long currentTime = Long.parseLong(Util.getCurrentDateAndTime());
             return (currentTime - cacheTime) > CACHE_EXPIRY_TIME;
         }
